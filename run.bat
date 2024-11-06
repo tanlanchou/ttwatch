@@ -1,0 +1,1 @@
+docker run -d --name rss_v0.1.0_container -p 8108:8108 --env CONSUL_HOST=%CONSUL_HOST% --restart always rss_v0.1.0
