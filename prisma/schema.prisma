@@ -1,0 +1,33 @@
+// This is your Prisma schema file
+// Learn more about Prisma schema: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model LogList {
+  id          Int      @id @default(autoincrement())
+  taskId      Int
+  content     String?  @db.Text
+  isDuplicate Boolean  @default(false) @map("isDuplicate")
+  scanTime    DateTime? @default(now()) @map("scanTime")
+}
+
+model TaskList {
+  id                      Int       @id @default(autoincrement())
+  userId                  Int
+  feed                    String    @db.VarChar(300)
+  type                    Int       @default(1)
+  hasUpdate               Boolean   @default(false) @map("hasUpdate")
+  lastFetchTime           DateTime? @default(now()) @map("lastFetchTime")
+  status                  String    @default("normal")
+  smsNotificationStatus   String    @default("not_started")
+  emailNotificationStatus String    @default("not_started")
+  pushNotificationStatus  String    @default("not_started")
+  feedStatus              String    @default("normal")
+}
