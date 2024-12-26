@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model LogList {
+  id          Int       @id @default(autoincrement())
+  taskId      Int
+  content     String?   @db.Text
+  isDuplicate Boolean   @default(false) @map("isDuplicate")
+  scanTime    DateTime? @default(now()) @map("scanTime") @db.Timestamp(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model TaskList {
+  id                      Int                              @id @default(autoincrement())
+  userId                  Int
+  feed                    String                           @db.VarChar(300)
+  type                    Int                              @default(1)
+  hasUpdate               Boolean                          @default(false)
+  lastFetchTime           DateTime?                        @default(now()) @db.Timestamp(0)
+  status                  TaskList_status                  @default(normal)
+  smsNotificationStatus   TaskList_smsNotificationStatus   @default(not_started)
+  emailNotificationStatus TaskList_emailNotificationStatus @default(not_started)
+  pushNotificationStatus  TaskList_pushNotificationStatus  @default(not_started)
+  feedStatus              TaskList_feedStatus              @default(normal)
+}
+
+enum TaskList_status {
+  normal
+  disabled
+}
+
+enum TaskList_smsNotificationStatus {
+  not_started
+  success
+  failure
+}
+
+enum TaskList_emailNotificationStatus {
+  not_started
+  success
+  failure
+}
+
+enum TaskList_pushNotificationStatus {
+  not_started
+  success
+  failure
+}
+
+enum TaskList_feedStatus {
+  normal
+  failure
+}
