@@ -13,6 +13,7 @@ model LogList {
   content     String?   @db.Text
   isDuplicate Boolean   @default(false) @map("isDuplicate")
   scanTime    DateTime? @default(now()) @map("scanTime") @db.Timestamp(0)
+  diff        String?   @map("diff") @db.Text
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments

@@ -1,15 +1,17 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { LogService } from './service';
 import { success, error } from 'src/common/helper/result';
 import * as log from 'electron-log';
 import { UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AccessVerifyInterceptor } from 'src/common/interceptor/access.verify.interceptor';
-
+import { ClientProxy } from "@nestjs/microservices";
+import { Action } from 'src/common/enum/action';
+import { NetworkUtils } from 'src/common/helper/ip';
 
 @Controller('logs')
 export class LogController {
-    constructor(private readonly logService: LogService) { }
+    constructor(private readonly logService: LogService, @Inject("MICROSERVICE_LOG_CLIENT") private readonly client: ClientProxy) { }
 
     // 新增日志
     @MessagePattern({ cmd: 'create_log' })
@@ -21,6 +23,15 @@ export class LogController {
             return success(result);
         } catch (ex) {
             log.error('Error in createLog:', ex);
+            this.client.send<object>(
+                { cmd: 'addLog' },
+                {
+                    operation: Action.CREATE_LOG,
+                    operator: "ttwatch",
+                    platform: "ttwatch",
+                    details: `新增日志失败, 错误信息${ex.message}, ${NetworkUtils.getLocalIpAddress()}`
+                },
+            )
             return error('新增日志失败');
         }
     }
@@ -36,6 +47,15 @@ export class LogController {
             return success(result);
         } catch (ex) {
             log.error('Error in getLogsByTaskId:', ex);
+            this.client.send<object>(
+                { cmd: 'addLog' },
+                {
+                    operation: Action.GET_LOGS_BY_TASK_ID,
+                    operator: "ttwatch",
+                    platform: "ttwatch",
+                    details: `根据 taskId 查询日志失败, 错误信息${ex.message}, ${NetworkUtils.getLocalIpAddress()}`
+                },
+            )
             return error('根据 taskId 查询日志失败');
         }
     }

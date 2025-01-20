@@ -43,6 +43,9 @@ export class LogService {
         return this.prisma.logList.findFirst({
             where: {
                 taskId,
+                content: {
+                    not: "",
+                },
             },
             orderBy: {
                 scanTime: 'desc',

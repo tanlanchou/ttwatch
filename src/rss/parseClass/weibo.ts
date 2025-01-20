@@ -1,9 +1,10 @@
+import { LogService } from 'src/log/service';
 import AbstractParser from '../parseAbstract';
 import { get } from 'lodash';
 
 export default class WeiboParser extends AbstractParser {
-    constructor(url: string, host: string) {
-        super(url, host);
+    constructor(url: string, host: string, taskId: number, logService: LogService) {
+        super(url, host, taskId, logService);
     }
 
     getUrl(): string {
