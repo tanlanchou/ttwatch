@@ -12,13 +12,16 @@ import { SocialMedia } from 'src/common/enum/social.media.type';
 import { ClientProxy } from "@nestjs/microservices";
 import { Action } from 'src/common/enum/action';
 import { NetworkUtils } from 'src/common/helper/ip';
+import { LogMethods } from 'src/common/enum/methods';
+import { ConfigService } from 'src/common/config/config.service';
+import { getAbc } from 'src/common/helper/access.verifiy';
 
 @Controller('tasks')
 export class TaskController {
-    constructor(private readonly taskService: TaskService, @Inject("MICROSERVICE_LOG_CLIENT") private readonly client: ClientProxy) { }
+    constructor(private readonly taskService: TaskService, @Inject("MICROSERVICE_LOG_CLIENT") private readonly client: ClientProxy, private readonly configService: ConfigService) { }
 
     // 获取所有任务
-    @MessagePattern({ cmd: 'get_all_tasks' })
+    @MessagePattern({ cmd: LogMethods.TASK_SERVICE_GET_ALL_TASKS })
     @UseInterceptors(AccessVerifyInterceptor)
     @UsePipes(new ValidationPipe({ transform: true }))
     async getAllTasks() {
@@ -27,13 +30,15 @@ export class TaskController {
             return success(result);
         } catch (ex) {
             log.error('Error in getAllTasks:', ex);
+            const [curTime, abc] = await getAbc(this.configService);
             this.client.send<object>(
-                { cmd: 'addLog' },
+                { cmd: LogMethods.LOG_ADD },
                 {
                     operation: Action.GET_ALL_TASKS,
                     operator: "ttwatch",
                     platform: "ttwatch",
-                    details: `获取所有任务失败, 错误信息${ex.message}, ${NetworkUtils.getLocalIpAddress()}`
+                    details: `获取所有任务失败, 错误信息${ex.message}, ${NetworkUtils.getLocalIpAddress()}`,
+                    curTime, abc
                 },
             )
             return error('获取所有任务失败');
@@ -41,19 +46,23 @@ export class TaskController {
     }
 
     // 根据用户ID获取任务
-    @MessagePattern({ cmd: 'get_tasks_by_user_id' })
+    @UseInterceptors(AccessVerifyInterceptor)
+    @MessagePattern({ cmd: LogMethods.TASK_SERVICE_GET_TASK_BY_USER_ID })
     async getTaskByUserId(@Payload() data: { userId: number; page?: number; pageSize?: number }) {
         try {
-            return await this.taskService.getTaskByUserId(data.userId, data.page, data.pageSize);
+            const result = await this.taskService.getTaskByUserId(data.userId, data.page, data.pageSize);
+            return success(result);
         } catch (ex) {
             log.error('Error in getTaskByUserId:', ex);
+            const [curTime, abc] = await getAbc(this.configService);
             this.client.send<object>(
-                { cmd: 'addLog' },
+                { cmd: LogMethods.LOG_ADD },
                 {
                     operation: Action.GET_TASKS_BY_USER_ID,
                     operator: "ttwatch",
                     platform: "ttwatch",
-                    details: `获取用户的Task失败, 错误信息${ex.message}, ${NetworkUtils.getLocalIpAddress()}`
+                    details: `获取用户的Task失败, 错误信息${ex.message}, ${NetworkUtils.getLocalIpAddress()}`,
+                    curTime, abc
                 },
             )
             return error('根据用户ID获取任务失败');
@@ -61,7 +70,8 @@ export class TaskController {
     }
 
     // 创建新任务
-    @MessagePattern({ cmd: 'create_task' })
+    @UseInterceptors(AccessVerifyInterceptor)
+    @MessagePattern({ cmd: LogMethods.TASK_SERVICE_CREATE_TASK })
     async createTask(@Payload() body: { userId: number; feed: string; type?: SocialMedia }) {
         try {
             const { userId, feed, type } = body;
@@ -73,16 +83,19 @@ export class TaskController {
             }
 
             const processedBody = { userId, feed, type };
-            return await this.taskService.createTask(processedBody);
+            const result = await this.taskService.createTask(processedBody);
+            return success(result);
         } catch (ex) {
             log.error('Error in createTask:', ex);
+            const [curTime, abc] = await getAbc(this.configService);
             this.client.send<object>(
-                { cmd: 'addLog' },
+                { cmd: LogMethods.LOG_ADD },
                 {
                     operation: Action.CREATE_TASK,
                     operator: "ttwatch",
                     platform: "ttwatch",
-                    details: `创建Task失败, 错误信息${ex.message}, ${NetworkUtils.getLocalIpAddress()}`
+                    details: `创建Task失败, 错误信息${ex.message}, ${NetworkUtils.getLocalIpAddress()}`,
+                    curTime, abc
                 },
             )
             return error('创建任务失败');
@@ -90,7 +103,8 @@ export class TaskController {
     }
 
     // 更新任务
-    @MessagePattern({ cmd: 'update_task' })
+    @UseInterceptors(AccessVerifyInterceptor)
+    @MessagePattern({ cmd: LogMethods.TASK_SERVICE_UPDATE_TASK })
     async updateTask(@Payload() data: { id: number; hasUpdate?: boolean; lastFetchTime?: Date; status?: string; smsNotificationStatus?: string; emailNotificationStatus?: string; pushNotificationStatus?: string; feedStatus?: string }) {
         try {
             const { id, ...fields } = data;
@@ -109,16 +123,19 @@ export class TaskController {
                 return error('更新任务时必须提供至少一个有效字段');
             }
 
-            return await this.taskService.updateTask(id, processedFields);
+            const result = await this.taskService.updateTask(id, processedFields);
+            return success(result);
         } catch (ex) {
             log.error('Error in updateTask:', ex);
+            const [curTime, abc] = await getAbc(this.configService);
             this.client.send<object>(
-                { cmd: 'addLog' },
+                { cmd: LogMethods.LOG_ADD },
                 {
                     operation: Action.UPDATE_TASK,
                     operator: "ttwatch",
                     platform: "ttwatch",
-                    details: `更新Task失败, 错误信息${ex.message}, ${NetworkUtils.getLocalIpAddress()}`
+                    details: `更新Task失败, 错误信息${ex.message}, ${NetworkUtils.getLocalIpAddress()}`,
+                    curTime, abc
                 },
             )
             return error('更新任务失败');
@@ -126,23 +143,27 @@ export class TaskController {
     }
 
     // 删除任务
-    @MessagePattern({ cmd: 'delete_task' })
+    @UseInterceptors(AccessVerifyInterceptor)
+    @MessagePattern({ cmd: LogMethods.TASK_SERVICE_DELETE_TASK })
     async deleteTask(@Payload() data: { id: number }) {
         try {
             const { id } = data;
             if (!id) {
                 return error('删除任务时必须提供ID');
             }
-            return await this.taskService.deleteTask(id);
+            const result = await this.taskService.deleteTask(id);
+            return success(result);
         } catch (ex) {
             log.error('Error in deleteTask:', ex);
+            const [curTime, abc] = await getAbc(this.configService);
             this.client.send<object>(
-                { cmd: 'addLog' },
+                { cmd: LogMethods.LOG_ADD },
                 {
                     operation: Action.DELETE_TASK,
                     operator: "ttwatch",
                     platform: "ttwatch",
-                    details: `删除Task失败, 错误信息${ex.message}, ${NetworkUtils.getLocalIpAddress()}`
+                    details: `删除Task失败, 错误信息${ex.message}, ${NetworkUtils.getLocalIpAddress()}`,
+                    curTime, abc
                 },
             )
             return error('删除任务失败');

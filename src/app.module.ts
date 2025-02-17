@@ -5,6 +5,7 @@ import { ConfigModule } from './common/config/config.module'; // Import the Conf
 import { ScheduleModule } from '@nestjs/schedule';
 import { TaskCronService } from './cron';
 import { LogModule } from './log/module';
+import { GlobalLogClientsModule } from 'src/common/global/log';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { LogModule } from './log/module';
     PrismaModule,
     TaskModule,
     LogModule,
+    GlobalLogClientsModule,
     ScheduleModule.forRoot()
   ],
   providers: [TaskCronService]
